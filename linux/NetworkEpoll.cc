@@ -1,13 +1,13 @@
-#include "NetworkEpollET.h"
+#include "NetworkEpoll.h"
 
-Mango::NetworkEpollET::~NetworkEpollET() {
+Mango::NetworkEpoll::~NetworkEpoll() {
     close(this->epoll_fd);
     close(this->socket_fd);
     FREE_MEM(this->epoll_events);
     FREE_MEM(this->buffer);
 }
 
-void Mango::NetworkEpollET::Initialize() {
+void Mango::NetworkEpoll::Initialize() {
     size_t max_user_watches = 0;
     int file_fd = open(
         this->epoll_filepath.c_str(), O_RDONLY);
@@ -21,7 +21,7 @@ void Mango::NetworkEpollET::Initialize() {
     DCHECK_EQ(this->epoll_fd, -1);
 }
 
-void Mango::NetworkEpollET::CreateServer() {
+void Mango::NetworkEpoll::CreateServer() {
     DCHECK_EQ(this->epoll_fd, -1);
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
@@ -66,10 +66,10 @@ void Mango::NetworkEpollET::CreateServer() {
     DCHECK_EQ(bind_fd, -1);
     this->epoll_events = (epoll_event*)malloc(
         this->max_event * sizeof(epoll_event));
-    addfd(this->socket_fd, true);
+    addfd(this->socket_fd, this->epoll_flg);
 }
 
-void Mango::NetworkEpollET::addfd (int fd, bool flg) {
+void Mango::NetworkEpoll::addfd (int fd, bool flg) {
     epoll_event event;
     event.data.fd = fd;
     // ET模式
@@ -83,14 +83,17 @@ void Mango::NetworkEpollET::addfd (int fd, bool flg) {
     DCHECK_EQ(r, -1);
 }
 
-void Mango::NetworkEpollET::delfd(int fd) {
+void Mango::NetworkEpoll::delfd(int fd) {
     // delete fd
+    /**
     int r = epoll_ctl(this->epoll_fd, 
                 EPOLL_CTL_DEL, fd, NULL);
     DCHECK_EQ(r, -1);
+    */
+    close(fd);
 }
 
-void Mango::NetworkEpollET::epoll_accept() {
+void Mango::NetworkEpoll::epoll_accept() {
     struct sockaddr_in cl_addr;
     socklen_t addr_size = sizeof(cl_addr);
     while(true) {
@@ -106,11 +109,11 @@ void Mango::NetworkEpollET::epoll_accept() {
                     fcntl(client_fd, 
                         F_GETFL, NULL) | O_NONBLOCK);
         DCHECK_EQ(r, -1);
-        addfd(client_fd, true);
+        addfd(client_fd, this->epoll_flg);
     }
 }
 
-void Mango::NetworkEpollET::EpollLoop(
+void Mango::NetworkEpoll::EpollLoop(
     Mango::EPOLL_CALLBACK call) {
         this->buffer = (MBYTE*)malloc(this->max_buffsize);
         while (true) {
@@ -142,7 +145,9 @@ void Mango::NetworkEpollET::EpollLoop(
                     if(m < 0) {
                         // 出错
                         delfd(this->epoll_events[i].data.fd);
-                    } else {
+                    } else if(m == 0){
+                        delfd(this->epoll_events[i].data.fd);
+                    }else {
                         // 数据接收成功
                         // 获取客户端ip与端口
                         struct sockaddr_in cli_addr;
@@ -161,7 +166,6 @@ void Mango::NetworkEpollET::EpollLoop(
                     }
                 }
             }
-            usleep(1);
         }
         FREE_MEM(this->buffer);
 }

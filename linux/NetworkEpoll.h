@@ -1,5 +1,5 @@
-#ifndef NETWORKEPOLLET_H_
-#define NETWORKEPOLLET_H_
+#ifndef NetworkEpoll_H_
+#define NetworkEpoll_H_
 #endif
 
 #include "NetworkBase.h"
@@ -16,9 +16,9 @@ typedef struct CLIENT_CONTEXT_ {
 typedef void (*EPOLL_CALLBACK)(void* buffer, 
             size_t buffer_size, CLIENT_CONTEXT ctx);
 
-class NetworkEpollET : public Mango::NetworkBase{
+class NetworkEpoll : public Mango::NetworkBase{
 public:
-    explicit NetworkEpollET()
+    explicit NetworkEpoll()
         :   epoll_filepath(MAX_USER_WATCHES),
             max_user_watches(0),
             socket_fd(-1),
@@ -28,9 +28,10 @@ public:
             max_event(1024),
             epoll_events(nullptr),
             buffer(nullptr),
+            epoll_flg(false),
             max_buffsize(MAX_BUFF_SIZE)
         {};
-    explicit NetworkEpollET(std::string ip, 
+    explicit NetworkEpoll(std::string ip, 
         unsigned short port) 
         :   NetworkBase(ip, port),
             epoll_filepath(MAX_USER_WATCHES),
@@ -42,9 +43,10 @@ public:
             max_event(1024),
             epoll_events(nullptr),
             buffer(nullptr),
+            epoll_flg(false),
             max_buffsize(MAX_BUFF_SIZE)
         {};
-    explicit NetworkEpollET(std::string ip, 
+    explicit NetworkEpoll(std::string ip, 
         unsigned short port,
         size_t max_event) 
         :   NetworkBase(ip, port),
@@ -57,9 +59,27 @@ public:
             max_event(max_event),
             epoll_events(nullptr),
             buffer(nullptr),
+            epoll_flg(false),
             max_buffsize(MAX_BUFF_SIZE)
         {};
-    ~NetworkEpollET();
+    explicit NetworkEpoll(std::string ip, 
+        unsigned short port,
+        size_t max_event,
+        bool flg) 
+        :   NetworkBase(ip, port),
+            epoll_filepath(MAX_USER_WATCHES),
+            max_user_watches(0),
+            socket_fd(-1),
+            epoll_fd(-1),
+            server_(false),
+            client_(false),
+            max_event(max_event),
+            epoll_events(nullptr),
+            buffer(nullptr),
+            epoll_flg(flg),
+            max_buffsize(MAX_BUFF_SIZE)
+        {};
+    ~NetworkEpoll();
     inline size_t GetMaxUserWatches() { 
         return this->max_user_watches;
     }
@@ -74,6 +94,14 @@ public:
 
     inline size_t GetMaxEvent(){
         return this->max_event;
+    }
+
+    inline void SetEpollFlg(bool flg){
+        this->epoll_flg = flg;
+    }
+
+    inline bool IsET(){
+        return this->epoll_flg;
     }
 
     void SetBuffSize(size_t s){
@@ -93,7 +121,7 @@ private:
     void delfd(int fd);
     void epoll_accept();
 
-
+    bool epoll_flg;
     bool server_;
     bool client_;
     std::string epoll_filepath;

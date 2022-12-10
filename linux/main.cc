@@ -1,4 +1,4 @@
-#include "NetworkEpollET.h"
+#include "NetworkEpoll.h"
 using namespace Mango;
 
 void ss(void* buffer, size_t buffer_size, CLIENT_CONTEXT ctx){
@@ -15,7 +15,7 @@ void ss(void* buffer, size_t buffer_size, CLIENT_CONTEXT ctx){
 }
 
 int main(int argc, char* argv[]) {
-    NetworkEpollET* net = new NetworkEpollET("0.0.0.0", 8000, 2048);
+    NetworkEpoll* net = new NetworkEpoll("0.0.0.0", 8000, 2048, false);
     net->Initialize();
     net->CreateServer();
     net->EpollLoop(ss);
