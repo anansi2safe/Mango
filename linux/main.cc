@@ -15,7 +15,7 @@ void ss(void* buffer, size_t buffer_size, CLIENT_CONTEXT ctx){
 }
 
 int main(int argc, char* argv[]) {
-    NetworkEpoll* net = new NetworkEpoll("0.0.0.0", 8000, 2048, false);
+    NetworkEpoll* net = new NetworkEpoll("0.0.0.0", 8000, 9000, true);
     net->Initialize();
     net->CreateServer();
     net->EpollLoop(ss);
