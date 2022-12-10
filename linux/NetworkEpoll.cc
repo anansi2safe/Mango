@@ -72,11 +72,11 @@ void Mango::NetworkEpoll::CreateServer() {
 void Mango::NetworkEpoll::addfd (int fd, bool flg) {
     epoll_event event;
     event.data.fd = fd;
-    // ET模式
+    // epoll_flg为真是ET模式
     if(flg)
         event.events = EPOLLIN | EPOLLOUT | EPOLLET ;
     else
-        event.events = EPOLLIN | EPOLLOUT;
+        event.events = EPOLLIN | EPOLLOUT ;
     // add fd
     int r = epoll_ctl(this->epoll_fd, 
                 EPOLL_CTL_ADD, fd, &event);
