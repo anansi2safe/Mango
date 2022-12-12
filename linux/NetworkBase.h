@@ -12,7 +12,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <iostream>
-#include <vector>
 
 namespace Mango{
 class NetworkBase {
