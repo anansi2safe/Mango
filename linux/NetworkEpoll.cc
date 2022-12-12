@@ -5,6 +5,7 @@ Mango::NetworkEpoll::~NetworkEpoll() {
     close(this->socket_fd);
     FREE_MEM(this->epoll_events);
     FREE_MEM(this->buffer);
+    delete[] this->actives_;
 }
 
 void Mango::NetworkEpoll::Initialize() {
@@ -70,6 +71,13 @@ void Mango::NetworkEpoll::CreateServer() {
 }
 
 void Mango::NetworkEpoll::addfd (int fd, bool flg) {
+    int op = 0;
+    // 判断是否是已在事件列表中
+    if(Is_Active(fd)){
+        op = this->actives_[fd].mask | EPOLL_CTL_MOD;
+    } else {
+        op = EPOLL_CTL_ADD;
+    }
     epoll_event event;
     event.data.fd = fd;
     // epoll_flg为真是ET模式
@@ -79,18 +87,13 @@ void Mango::NetworkEpoll::addfd (int fd, bool flg) {
         event.events = EPOLLIN | EPOLLOUT ;
     // add fd
     int r = epoll_ctl(this->epoll_fd, 
-                EPOLL_CTL_ADD, fd, &event);
+                op, fd, &event);
     DCHECK_EQ(r, -1);
 }
 
 void Mango::NetworkEpoll::delfd(int fd) {
     // delete fd
-    /**
-    int r = epoll_ctl(this->epoll_fd, 
-                EPOLL_CTL_DEL, fd, NULL);
-    DCHECK_EQ(r, -1);
-    */
-    close(fd);
+    CloseSocketFD(fd);
 }
 
 void Mango::NetworkEpoll::epoll_accept() {
