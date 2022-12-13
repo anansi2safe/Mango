@@ -16,17 +16,26 @@ void ss(void* buffer, size_t buffer_size, CLIENT_CONTEXT ctx){
                 "\t</head>\n"
                 "\t<body>\n"
                 "\t\t<center><h1>400 Bad Request</h1></center>\n"
+                "\t\t<center><h1>400 Bad Request</h1></center>\n"
+                "\t\t<center><h1>400 Bad Request</h1></center>\n"
+                "\t\t<center><h1>400 Bad Request</h1></center>\n"
+                "\t\t<center><h1>400 Bad Request</h1></center>\n"
+                "\t\t<center><h1>400 Bad Request</h1></center>\n"
+                "\t\t<center><h1>400 Bad Request</h1></center>\n"
+                "\t\t<center><h1>400 Bad Request</h1></center>\n"
+                "\t\t<center><h1>400 Bad Request</h1></center>\n"
+                "\t\t<center><h1>400 Bad Request</h1></center>\n"
                 "\t\t<p>111111111</p>\n"
                 "\t</body>\n"
                 "</html>\n";
                 
     int l = send(ctx.fd, s, sizeof(s), 0);
-    NetworkEpoll::CloseSocketFD(ctx.fd);
 }
 
 int main(int argc, char* argv[]) {
     NetworkEpoll* net = new NetworkEpoll("0.0.0.0", 8000, 9000, true);
     net->Initialize();
+    net->SetKeepAlive(false);
     net->CreateServer();
     net->EpollLoop(ss);
     return 0;

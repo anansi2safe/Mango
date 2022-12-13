@@ -3,9 +3,9 @@
 Mango::NetworkEpoll::~NetworkEpoll() {
     close(this->epoll_fd);
     close(this->socket_fd);
+    this->ac.clear();
     FREE_MEM(this->epoll_events);
     FREE_MEM(this->buffer);
-    delete[] this->actives_;
 }
 
 void Mango::NetworkEpoll::Initialize() {
@@ -67,33 +67,40 @@ void Mango::NetworkEpoll::CreateServer() {
     DCHECK_EQ(bind_fd, -1);
     this->epoll_events = (epoll_event*)malloc(
         this->max_event * sizeof(epoll_event));
-    addfd(this->socket_fd, this->epoll_flg);
+    addfd(this->socket_fd);
 }
 
-void Mango::NetworkEpoll::addfd (int fd, bool flg) {
-    int op = 0;
+void Mango::NetworkEpoll::addfd (int fd) {
+    int op = EPOLL_CTL_ADD;
     // 判断是否是已在事件列表中
-    if(Is_Active(fd)){
-        op = this->actives_[fd].mask | EPOLL_CTL_MOD;
-    } else {
-        op = EPOLL_CTL_ADD;
-    }
     epoll_event event;
     event.data.fd = fd;
     // epoll_flg为真是ET模式
-    if(flg)
+    if(this->epoll_flg)
         event.events = EPOLLIN | EPOLLOUT | EPOLLET ;
     else
         event.events = EPOLLIN | EPOLLOUT ;
+
+    if(this->ac.find(fd) != this->ac.end()){
+        op = EPOLL_CTL_MOD;
+        std::cout<<"11111111\n";
+    }else{
+        this->ac[fd] = true;
+    }
     // add fd
     int r = epoll_ctl(this->epoll_fd, 
                 op, fd, &event);
     DCHECK_EQ(r, -1);
 }
 
-void Mango::NetworkEpoll::delfd(int fd) {
-    // delete fd
-    CloseSocketFD(fd);
+void Mango::NetworkEpoll::delfd (int fd) {
+    if(this->ac.find(fd) != this->ac.end()){
+        this->ac.erase(fd);
+    }
+     int r = epoll_ctl(this->epoll_fd, 
+                EPOLL_CTL_DEL, fd, NULL);
+    DCHECK_EQ(r, -1);
+    close(fd);
 }
 
 void Mango::NetworkEpoll::epoll_accept() {
@@ -107,12 +114,33 @@ void Mango::NetworkEpoll::epoll_accept() {
         // 如果client_fd为-1且errno为EAGAIN才代表连接接收完毕
         if((client_fd == -1) && (errno == EAGAIN))
             break;
+        struct timeval time_o = {this->cli_timeo, 0};
         // 设置非阻塞描述符
         int r = fcntl(client_fd, F_SETFL, 
                     fcntl(client_fd, 
                         F_GETFL, NULL) | O_NONBLOCK);
         DCHECK_EQ(r, -1);
-        addfd(client_fd, this->epoll_flg);
+        // 超时设置，recv超时时返回-1，设置errno为EAGAIN或EWOULDBLOCK
+        // send相同
+        if(setsockopt(client_fd, 
+            SOL_SOCKET, 
+            SO_RCVTIMEO,
+            &time_o, sizeof(time_o))) {
+                //异常中断
+                EXCEPTION("setsockopt error");
+                BREAK();
+        } 
+        if(setsockopt(client_fd, 
+            SOL_SOCKET, 
+            SO_SNDTIMEO,
+            &time_o, sizeof(time_o))) {
+                //异常中断
+                EXCEPTION("setsockopt error");
+                BREAK();
+        } 
+
+        DCHECK_EQ(r, -1);
+        addfd(client_fd);
     }
 }
 
@@ -166,6 +194,8 @@ void Mango::NetworkEpoll::EpollLoop(
                         ctx.fd = this->epoll_events[i].data.fd;
                         // 回调函数如果卡住将会卡住整个epoll循环体,导致服务端卡死
                         call(buffer, this->max_buffsize, ctx);
+                        if(!this->keepalive)
+                            delfd(ctx.fd);
                     }
                 }
             }
