@@ -1,8 +1,9 @@
 #ifndef BASE_H
 #define BASE_H
-#endif
 
 #include <assert.h>
+#include <iostream>
+
 
 #define EXCEPTION(m) throw(m)
 #define FREE_MEM(m) if(m){free(m);}
@@ -25,3 +26,5 @@
 #define MAX_USER_WATCHES "/proc/sys/fs/epoll/max_user_watches"
 #define FILE_OPEN_FAILED 0xF
 #define MAX_BUFF_SIZE 0xFFFF
+
+#endif

@@ -1,8 +1,8 @@
 #ifndef NetworkEpoll_H_
 #define NetworkEpoll_H_
-#endif
 
 #include "NetworkBase.h"
+
 
 namespace Mango{
 typedef struct CLIENT_CONTEXT_ {
@@ -107,6 +107,7 @@ public:
         {};
         
     ~NetworkEpoll();
+    
     inline size_t GetMaxUserWatches() { 
         return this->max_user_watches;
     }
@@ -141,6 +142,11 @@ public:
         return this->epoll_fd;
     }
 
+    // 獲取socket fd
+    inline int GetSockFd(){
+        return this->socket_fd;
+    }
+
     // 接收缓存区大小
     inline void SetBuffSize(size_t s){
         this->max_buffsize = s;
@@ -155,10 +161,11 @@ public:
         return this->ac;
     }
 
-    inline int sock_accept(sockaddr_in* cl_addr,
+    inline int sock_accept(int sock_fd, 
+                            sockaddr_in* cl_addr,
                             socklen_t* addr_size){
         return accept(
-            this->socket_fd, 
+            sock_fd, 
             (struct sockaddr*)cl_addr, 
             addr_size);
     }
@@ -191,3 +198,5 @@ private:
     epoll_event* epoll_events;
 };
 }
+
+#endif
