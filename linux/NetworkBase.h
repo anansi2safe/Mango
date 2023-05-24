@@ -1,6 +1,5 @@
 #ifndef NETWORKBASE_H_
 #define NETWORKBASE_H_
-#endif
 
 #include "../base.h"
 #include <sys/socket.h>
@@ -13,7 +12,6 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <iostream>
 #include <map>
 
 namespace Mango{
@@ -48,3 +46,5 @@ private:
     unsigned short port;
 };
 }
+
+#endif
