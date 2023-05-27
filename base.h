@@ -4,19 +4,29 @@
 #include <assert.h>
 #include <iostream>
 
+#define ALLOC calloc
 
+#define FREE_MEM(p) do{ \
+    if(p){              \
+        free(p);        \
+    }                   \
+    p = nullptr;        \
+}while(0);
+
+#define OS_ABORT abort()
 #define EXCEPTION(m) throw(m)
-#define FREE_MEM(m) if(m){free(m);}
 #if _DEBUG_
 #define DCHECK_IMPL(b) assert(b)
 // 当b为true时触发异常断点
 #define DCHECK(b) DCHECK_IMPL(!(b))
 #define DCHECK_EQ(a,b) DCHECK(a == b)
+#define DCHECK_NEQ(a,b) DCHECK(a != b)
 #define DCHECK_LE(a,b) DCHECK(a < b)
 #define BREAK() assert(false);
 #else
 #define DCHECK(b)
 #define DCHECK_EQ(a,b)
+#define DCHECK_NEQ(a,b)
 #define DCHECK_LE(a,b)
 #define BREAK()
 #endif
